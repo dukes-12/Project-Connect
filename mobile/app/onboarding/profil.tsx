@@ -1,9 +1,11 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 
+import { choisirPhoto, televerserPhoto, type PhotoChoisie } from "../../src/donnees/photos.ts";
 import { creerMonProfil } from "../../src/donnees/requetes.ts";
 import { useSession } from "../../src/session.tsx";
+import { Avatar } from "../../src/ui/avatar.tsx";
 import { Bouton, Champ, Erreur, Paragraphe, Titre } from "../../src/ui/composants.tsx";
 import { couleurs, espaces } from "../../src/ui/theme.ts";
 
@@ -19,13 +21,33 @@ export default function EcranProfil() {
   const [ageMin, setAgeMin] = useState("25");
   const [ageMax, setAgeMax] = useState("45");
   const [sexeVisible, setSexeVisible] = useState(true);
+  const [photo, setPhoto] = useState<PhotoChoisie | null>(null);
+  const [apercu, setApercu] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  async function selectionnerPhoto() {
+    setErreur(null);
+    try {
+      const choisie = await choisirPhoto();
+      if (!choisie) {
+        return setErreur("Aucune photo sélectionnée — l'accès à la galerie est peut-être refusé.");
+      }
+      setPhoto(choisie);
+      setApercu(`data:${choisie.typeMime};base64,${choisie.base64}`);
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Sélection de la photo impossible.");
+    }
+  }
 
   async function valider() {
     setErreur(null);
     const utilisateur = session?.user;
     if (!utilisateur) return setErreur("Session expirée, reconnectez-vous.");
+
+    // §6.1 : la photo est obligatoire, c'est le minimum de confiance entre
+    // personnes qui vont se rencontrer.
+    if (!photo) return setErreur("Une photo de profil est nécessaire pour continuer.");
 
     if (!FORMAT_DATE.test(dateNaissance)) {
       return setErreur("Date de naissance attendue au format AAAA-MM-JJ.");
@@ -38,6 +60,10 @@ export default function EcranProfil() {
 
     setOccupe(true);
     try {
+      // La photo part avant la ligne de profil : si l'envoi échoue, on n'a pas
+      // créé un profil qui pointe vers un fichier inexistant.
+      const cheminPhoto = await televerserPhoto(utilisateur.id, photo);
+
       await creerMonProfil({
         id: utilisateur.id,
         email: utilisateur.email ?? "",
@@ -50,9 +76,7 @@ export default function EcranProfil() {
           .map((l) => l.trim().toLowerCase())
           .filter(Boolean),
         sexe_visible: sexeVisible,
-        // Convention du bucket `photos-profil`. Le téléversement de l'image
-        // elle-même n'est pas encore implémenté : voir README.
-        photo_url: `${utilisateur.id}/profil.jpg`,
+        photo_url: cheminPhoto,
       });
       await rafraichirProfil();
       router.replace("/onboarding/carte");
@@ -73,6 +97,22 @@ export default function EcranProfil() {
 
       <View style={styles.formulaire}>
         <Erreur message={erreur} />
+
+        <View style={styles.photo}>
+          {apercu ? (
+            <Image source={{ uri: apercu }} style={styles.apercu} accessibilityIgnoresInvertColors />
+          ) : (
+            <Avatar chemin={null} repli={session?.user.email} taille={88} />
+          )}
+          <View style={styles.photoTexte}>
+            <Bouton
+              variante="contour"
+              titre={photo ? "Changer la photo" : "Choisir une photo"}
+              onPress={() => void selectionnerPhoto()}
+            />
+            <Paragraphe>Obligatoire, et toujours visible des autres.</Paragraphe>
+          </View>
+        </View>
 
         <Champ
           libelle="Date de naissance (AAAA-MM-JJ)"
@@ -133,4 +173,7 @@ const styles = StyleSheet.create({
     paddingVertical: espaces.s,
   },
   basculeTexte: { fontSize: 15, color: couleurs.texte, flex: 1 },
+  photo: { flexDirection: "row", alignItems: "center", gap: espaces.m, marginBottom: espaces.m },
+  photoTexte: { flex: 1 },
+  apercu: { width: 88, height: 88, borderRadius: 44 },
 });

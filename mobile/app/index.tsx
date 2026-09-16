@@ -126,6 +126,56 @@ export default function EcranAccueil() {
             </Link>
           </Bloc>
 
+          <Bloc>
+            <SousTitre>S'installer</SousTitre>
+            <Paragraphe>
+              Les démarches à prévoir, et les repères de la ville.
+            </Paragraphe>
+            <Link
+              href={{
+                pathname: "/checklist",
+                params: {
+                  carteId: principale.id,
+                  pays: principale.pays,
+                  ville: principale.ville,
+                },
+              }}
+              asChild
+            >
+              <Text style={styles.lien}>Ma checklist d'installation →</Text>
+            </Link>
+            <Link
+              href={{
+                pathname: "/ville",
+                params: {
+                  ville: principale.ville,
+                  pays: principale.pays,
+                  ...(principale.date_debut ? { debut: principale.date_debut } : {}),
+                  ...(principale.date_fin ? { fin: principale.date_fin } : {}),
+                },
+              }}
+              asChild
+            >
+              <Text style={styles.lien}>Fiche de {principale.ville} →</Text>
+            </Link>
+          </Bloc>
+
+          <Bloc>
+            <SousTitre>Locaux</SousTitre>
+            <Paragraphe>
+              Des habitants de {principale.ville} disponibles pour accueillir des arrivants.
+            </Paragraphe>
+            <Link
+              href={{
+                pathname: "/locaux",
+                params: { ville: principale.ville, pays: principale.pays },
+              }}
+              asChild
+            >
+              <Text style={styles.lien}>Découvrir les locaux →</Text>
+            </Link>
+          </Bloc>
+
           {sejourEligibleAuMatching(principale, principale.statut) ? (
             <Bouton
               variante="contour"

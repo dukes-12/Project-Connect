@@ -11,9 +11,10 @@ Spec produit & technique : [`docs/spec-produit.md`](docs/spec-produit.md).
 Backend complet pour le périmètre MVP (§9), appliqué et déployé sur le projet
 Supabase `Project-Connect` (région eu-central-1).
 
-Application mobile Expo : ossature en place — session, onboarding, accueil,
-cohortes, propositions de match, messagerie temps réel. Elle compile et se
-bundle, mais **n'a jamais été exécutée** : voir « Limites de vérification ».
+Application mobile Expo : le périmètre MVP est couvert — session, onboarding
+avec photo, accueil, cohortes, propositions de match, messagerie temps réel,
+fiche ville, checklist d'installation et découverte des locaux. Elle compile et
+se bundle, mais **n'a jamais été exécutée** : voir « Limites de vérification ».
 
 ## Structure
 
@@ -40,11 +41,12 @@ mobile/                  Application Expo (expo-router)
 npm test
 ```
 
-61 tests unitaires, sans base ni réseau :
+72 tests unitaires, sans base ni réseau :
 
 - **28 côté backend** — logique de cohorte et service de matching, écrit contre
   une interface `DepotMatching` qu'un dépôt en mémoire implémente.
-- **33 côté mobile** — découpage de la session, traduction, état d'un séjour.
+- **44 côté mobile** — découpage de la session, traduction, état d'un séjour,
+  décodage base64.
 
 Pas de framework de test : Node exécute le TypeScript directement
 (`--experimental-strip-types`). `npm run typecheck:mobile` vérifie le typage de
@@ -153,9 +155,10 @@ npm install --legacy-peer-deps
 npx expo start
 ```
 
-Parcours couvert (§11) : inscription → profil → première carte → centres
-d'intérêt → accueil, avec cohortes, propositions de match et messagerie temps
-réel.
+Parcours couvert (§11) : inscription → profil et photo → première carte →
+centres d'intérêt → accueil, d'où partent cohortes, propositions de match,
+messagerie temps réel, fiche ville, checklist d'installation et découverte des
+locaux.
 
 La session est stockée dans SecureStore **découpée en fragments** : un jeton
 Supabase dépasse la limite de 2048 octets par entrée. Le découpage se fait sur
@@ -165,6 +168,13 @@ intact.
 Tout ce qui concerne les autres comptes passe par les vues masquées
 (`v_cartes_publiques`, `v_locaux_actifs`) et jamais par les tables : les champs
 qu'une personne a choisi de cacher reviennent à `null` jusque dans l'app.
+
+La photo part en base64 depuis la galerie, décodée en octets par
+`src/domaine/base64.ts` — écrit à la main plutôt qu'avec un polyfill, parce que
+Hermes ne garantit pas `atob` et que `Buffer` n'existe pas en React Native. Elle
+est envoyée **avant** la création du profil : un échec ne laisse donc pas une
+ligne pointant vers un fichier inexistant. À l'affichage, le bucket étant privé,
+chaque photo passe par une URL signée.
 
 ## Limites de vérification
 
@@ -182,11 +192,10 @@ Le réseau de l'environnement de développement bloque `*.supabase.co`,
 
 ## Ce qui reste à construire
 
-- **Téléversement de la photo de profil.** Le bucket et ses règles existent, la
-  convention de chemin est respectée, mais l'app n'envoie pas encore l'image :
-  `expo-image-picker` n'a pas pu être installé sans `expo install`. Les profils
-  créés pointent vers un chemin encore vide.
-- Écrans fiche ville, checklist et découverte des locaux — les requêtes
-  existent déjà dans `src/donnees/requetes.ts`.
-- Blocage et signalement depuis l'app (les requêtes existent aussi).
+- **Blocage et signalement depuis l'app.** Les requêtes existent déjà dans
+  `src/donnees/requetes.ts` ; il manque les points d'entrée dans la conversation
+  et sur les profils, que la spec §9.7 veut visibles pendant l'échange.
+- **Soumission communautaire d'un événement** (§7.1) — la recherche de doublons
+  et les règles d'écriture sont prêtes côté base.
+- **Modification du profil et des cartes** après l'onboarding.
 - Back-office de modération, notifications push, agrégation d'événements.
