@@ -33,6 +33,45 @@ export function aujourdhuiISO(maintenant = new Date()): string {
   return maintenant.toISOString().slice(0, 10);
 }
 
+const MOIS: Record<Langue, string[]> = {
+  fr: ["janvier", "février", "mars", "avril", "mai", "juin",
+       "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
+  en: ["January", "February", "March", "April", "May", "June",
+       "July", "August", "September", "October", "November", "December"],
+};
+
+/**
+ * Date lisible : « 15 mars 2027 ». Écrit à la main plutôt qu'avec
+ * `toLocaleDateString` — celui-ci dépend des données de locale embarquées, qui
+ * varient selon la plateforme et peuvent manquer sur Android avec Hermes.
+ * L'année est omise quand elle vaut celle en cours : « 15 mars » suffit.
+ */
+export function formaterDate(iso: string, langue: Langue, aujourdhui = aujourdhuiISO()): string {
+  const [annee, mois, jour] = iso.split("-").map(Number);
+  enJoursUTC(iso); // valide le format et l'existence de la date
+  const nomMois = MOIS[langue][mois - 1];
+  const memeAnnee = String(annee) === aujourdhui.slice(0, 4);
+
+  if (langue === "en") {
+    return memeAnnee ? `${nomMois} ${jour}` : `${nomMois} ${jour}, ${annee}`;
+  }
+  const premier = jour === 1 ? "1er" : String(jour);
+  return memeAnnee ? `${premier} ${nomMois}` : `${premier} ${nomMois} ${annee}`;
+}
+
+/** Période lisible : « du 15 mars au 15 juin 2027 », ou une seule date. */
+export function formaterPeriode(
+  debut: string,
+  fin: string | null,
+  langue: Langue,
+  aujourdhui = aujourdhuiISO(),
+): string {
+  if (!fin || fin === debut) return formaterDate(debut, langue, aujourdhui);
+  const de = langue === "fr" ? "du" : "from";
+  const a = langue === "fr" ? "au" : "to";
+  return `${de} ${formaterDate(debut, langue, aujourdhui)} ${a} ${formaterDate(fin, langue, aujourdhui)}`;
+}
+
 export interface Sejour {
   type: "local" | "voyageur" | "travailleur";
   date_debut: string | null;

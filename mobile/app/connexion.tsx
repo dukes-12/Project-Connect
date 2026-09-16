@@ -1,3 +1,4 @@
+import { Stack } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -46,6 +47,8 @@ export default function EcranConnexion() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.plein}
     >
+      {/* Sans ça, l'en-tête affiche « connexion », le nom du fichier de route. */}
+      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentContainerStyle={styles.contenu} keyboardShouldPersistTaps="handled">
         <View>
           <Titre>Project-Connect</Titre>

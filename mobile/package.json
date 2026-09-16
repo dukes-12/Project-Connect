@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^22.20.3",
     "@types/react": "~19.2.2",
+    "playwright": "^1.63.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -32,7 +33,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "node --experimental-strip-types --test src/domaine/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "export:web": "EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 expo export --clear --platform web --output-dir .expo-web",
+    "fumee": "npm run export:web && node outils/fumee.mjs .expo-web",
+    "captures": "npm run export:web && node outils/captures.mjs .expo-web captures"
   },
   "private": true
 }

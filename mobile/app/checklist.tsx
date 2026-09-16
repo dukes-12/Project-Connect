@@ -80,7 +80,6 @@ export default function EcranChecklist() {
 
   return (
     <ScrollView contentContainerStyle={styles.contenu}>
-      <Titre>Installation</Titre>
       <Paragraphe>
         {items && items.length > 0
           ? `${faits} sur ${items.length} — appuyez pour faire avancer.`

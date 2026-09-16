@@ -272,3 +272,15 @@ pastille à initiale. C'est cohérent — le blocage coupe la visibilité — ma
 signifie qu'on débloque quelqu'un sans le revoir. À revoir si la liste s'avère
 inutilisable à l'usage : il faudrait alors une vue dédiée exposant le strict
 minimum pour identifier qui l'on débloque.
+
+## 26. L'interface est en français ; seuls les contenus sont bilingues
+
+Le premier rendu réel a montré « Arriving in 180 days » au milieu d'un écran
+français : `libelleEtatSejour` suivait la langue de l'appareil alors que tous
+les libellés d'écran sont écrits en dur en français. Une phrase anglaise isolée
+est pire que du tout-français.
+
+Séparé depuis : `LANGUE_INTERFACE` (fixée à `"fr"`) pour les textes de l'app,
+et la langue de l'appareil pour les contenus venant de la base, qui sont
+réellement bilingues. À basculer sur `choisirLangue()` le jour où les écrans
+seront traduits.

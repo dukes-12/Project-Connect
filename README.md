@@ -14,8 +14,8 @@ Supabase `Project-Connect` (région eu-central-1).
 Application mobile Expo : le périmètre MVP est couvert — session, onboarding
 avec photo, accueil, cohortes, propositions de match, messagerie temps réel,
 fiche ville, checklist d'installation, découverte des locaux, soumission
-d'événement, blocage et signalement. Elle compile et se bundle, mais **n'a
-jamais été exécutée** : voir « Limites de vérification ».
+d'événement, blocage et signalement. Elle **démarre et rend ses écrans** — voir
+« Test de fumée » — mais n'a jamais tourné sur un appareil réel.
 
 ## Structure
 
@@ -42,12 +42,12 @@ mobile/                  Application Expo (expo-router)
 npm test
 ```
 
-85 tests unitaires, sans base ni réseau :
+91 tests unitaires, sans base ni réseau :
 
 - **28 côté backend** — logique de cohorte et service de matching, écrit contre
   une interface `DepotMatching` qu'un dépôt en mémoire implémente.
-- **57 côté mobile** — découpage de la session, traduction, état d'un séjour,
-  décodage base64, validation d'une soumission d'événement.
+- **63 côté mobile** — découpage de la session, traduction, état d'un séjour,
+  formatage de dates, décodage base64, validation d'une soumission d'événement.
 
 Pas de framework de test : Node exécute le TypeScript directement
 (`--experimental-strip-types`). `npm run typecheck:mobile` vérifie le typage de
@@ -178,14 +178,34 @@ est envoyée **avant** la création du profil : un échec ne laisse donc pas une
 ligne pointant vers un fichier inexistant. À l'affichage, le bucket étant privé,
 chaque photo passe par une URL signée.
 
+## Test de fumée
+
+```
+cd mobile
+npm run fumee      # l'app démarre-t-elle vraiment ?
+npm run captures   # rend chaque écran et l'enregistre en image
+```
+
+`npm run fumee` exporte le bundle web, le sert en local et le charge dans
+Chromium. Il vérifie que l'application démarre, que le routeur monte, que le
+premier écran s'affiche et qu'une interaction React répond — ce qu'aucun
+typage ni bundling ne dit. Il tourne aussi en CI.
+
+`npm run captures` va plus loin : les appels Supabase sont interceptés et
+servis depuis `outils/donnees_factices.mjs`, ce qui permet de rendre **chaque
+écran** hors ligne et d'en garder une image. Les fixtures honorent les
+paramètres `eq`, `order` et `limit` des requêtes, sans quoi les captures
+montreraient un ordre que la vraie base ne produirait jamais.
+
 ## Limites de vérification
 
 Le réseau de l'environnement de développement bloque `*.supabase.co`,
 `docs.expo.dev` et l'API d'Expo. En conséquence :
 
-- **L'app n'a jamais été lancée.** Elle passe `tsc --noEmit` et se bundle
-  (`expo export --platform web`, 841 modules), ce qui prouve que le graphe de
-  modules et les types tiennent — pas que les écrans s'affichent correctement.
+- **L'app n'a tourné que dans un navigateur, jamais sur un appareil.** Le test
+  de fumée prouve qu'elle démarre et que ses dix écrans se rendent sans erreur
+  d'exécution, mais rien de ce qui est propre au natif n'est couvert :
+  SecureStore, la galerie photo, le clavier, les gestes.
 - **Les versions des paquets n'ont pas été résolues par `expo install`** mais
   par npm. Les paquets Expo sont bien alignés sur le SDK 57, mais cela reste à
   confirmer sur un poste connecté.

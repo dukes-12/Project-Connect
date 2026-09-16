@@ -14,6 +14,15 @@ export type Langue = (typeof LANGUES)[number];
 
 export const LANGUE_DE_REFERENCE: Langue = "fr";
 
+/**
+ * Langue des textes de l'interface. Fixée au français : les libellés des écrans
+ * sont écrits en dur, seuls les CONTENUS venant de la base sont bilingues.
+ * Faire suivre à l'interface la langue de l'appareil produirait une phrase
+ * anglaise isolée au milieu d'un écran français — pire que du tout-français.
+ * À remplacer par `choisirLangue()` le jour où les écrans seront traduits.
+ */
+export const LANGUE_INTERFACE: Langue = "fr";
+
 export interface ContenuTraduisible {
   traductions?: unknown;
 }

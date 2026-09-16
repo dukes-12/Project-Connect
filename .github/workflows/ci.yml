@@ -33,3 +33,17 @@ jobs:
       - name: Typage de l'app mobile
         working-directory: mobile
         run: npm run typecheck
+
+      # Le test de fumée lance réellement l'app dans un navigateur : c'est le
+      # seul garde-fou contre une erreur qui ne se voit ni au typage ni au
+      # bundling — un hook mal utilisé, un import qui explose au montage.
+      - name: Navigateur pour le test de fumée
+        working-directory: mobile
+        run: npx playwright install --with-deps chromium
+
+      - name: Test de fumée (l'app démarre-t-elle ?)
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://exemple.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: cle-factice-pour-le-bundling
+        run: npm run fumee

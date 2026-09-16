@@ -23,7 +23,6 @@ export default function EcranConversations() {
 
   return (
     <ScrollView contentContainerStyle={styles.contenu}>
-      <Titre>Messages</Titre>
       <Erreur message={erreur} />
 
       {conversations && conversations.length === 0 ? (

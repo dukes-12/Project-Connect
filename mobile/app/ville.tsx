@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { lireFicheVille, listerEvenements, type FicheVille } from "../src/donnees/requetes.ts";
-import { champTraduit, traduire } from "../src/domaine/traduction.ts";
+import { formaterPeriode } from "../src/domaine/sejour.ts";
+import { champTraduit, traduire, LANGUE_INTERFACE } from "../src/domaine/traduction.ts";
 import { useSession } from "../src/session.tsx";
 import {
   Bloc,
@@ -157,8 +158,9 @@ export default function EcranVille() {
             <Bloc key={evenement.id ?? evenement.titre}>
               <Text style={styles.fort}>{champTraduit(evenement, "titre", langue)}</Text>
               <Text style={styles.note}>
-                {evenement.date_debut}
-                {evenement.date_fin ? ` → ${evenement.date_fin}` : ""}
+                {evenement.date_debut
+                  ? formaterPeriode(evenement.date_debut, evenement.date_fin, LANGUE_INTERFACE)
+                  : ""}
               </Text>
               <Paragraphe>
                 {traduire(evenement, "description", langue, evenement.description)}

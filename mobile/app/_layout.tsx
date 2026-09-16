@@ -42,8 +42,24 @@ function Aiguillage() {
         headerShadowVisible: false,
         headerTintColor: couleurs.texte,
         contentStyle: { backgroundColor: couleurs.fond },
+        headerBackTitle: "Retour",
       }}
-    />
+    >
+      {/* Sans titre explicite, expo-router affiche le nom du fichier. */}
+      <Stack.Screen name="index" options={{ title: "Accueil" }} />
+      <Stack.Screen name="connexion" options={{ headerShown: false }} />
+      <Stack.Screen name="cohorte" options={{ title: "Cohortes" }} />
+      <Stack.Screen name="matchs" options={{ title: "Propositions" }} />
+      <Stack.Screen name="conversations" options={{ title: "Messages" }} />
+      <Stack.Screen name="ville" options={{ title: "Fiche ville" }} />
+      <Stack.Screen name="checklist" options={{ title: "Installation" }} />
+      <Stack.Screen name="locaux" options={{ title: "Locaux" }} />
+      <Stack.Screen name="comptes-bloques" options={{ title: "Comptes bloqués" }} />
+      <Stack.Screen name="evenement/nouveau" options={{ title: "Proposer un événement" }} />
+      <Stack.Screen name="onboarding/profil" options={{ title: "Votre profil" }} />
+      <Stack.Screen name="onboarding/carte" options={{ title: "Votre situation" }} />
+      <Stack.Screen name="onboarding/interets" options={{ title: "Vos intérêts" }} />
+    </Stack>
   );
 }
 

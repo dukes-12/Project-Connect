@@ -8,6 +8,8 @@ import {
   rejoindreCohorte,
   type GroupePropose,
 } from "../src/donnees/requetes.ts";
+import { formaterPeriode } from "../src/domaine/sejour.ts";
+import { LANGUE_INTERFACE } from "../src/domaine/traduction.ts";
 import {
   Bloc,
   Bouton,
@@ -15,7 +17,6 @@ import {
   Erreur,
   Paragraphe,
   SousTitre,
-  Titre,
 } from "../src/ui/composants.tsx";
 import { couleurs, espaces } from "../src/ui/theme.ts";
 
@@ -77,7 +78,6 @@ export default function EcranCohorte() {
 
   return (
     <ScrollView contentContainerStyle={styles.contenu}>
-      <Titre>Cohortes</Titre>
       <Erreur message={erreur} />
 
       {dejaCree ? (
@@ -108,7 +108,7 @@ export default function EcranCohorte() {
               <SousTitre>{groupe.description}</SousTitre>
               <Paragraphe>
                 {groupe.nb_membres} membre{groupe.nb_membres > 1 ? "s" : ""} ·{" "}
-                {groupe.fenetre_debut} → {groupe.fenetre_fin}
+                {formaterPeriode(groupe.fenetre_debut, groupe.fenetre_fin, LANGUE_INTERFACE)}
               </Paragraphe>
               {!groupe.meme_type ? (
                 <Text style={styles.note}>Groupe d'un autre type de carte, mais aux mêmes dates.</Text>

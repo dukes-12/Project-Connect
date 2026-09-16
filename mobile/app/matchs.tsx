@@ -8,6 +8,8 @@ import {
   repondreAuMatch,
   type CartePublique,
 } from "../src/donnees/requetes.ts";
+import { formaterPeriode } from "../src/domaine/sejour.ts";
+import { LANGUE_INTERFACE } from "../src/domaine/traduction.ts";
 import { useUtilisateurId } from "../src/session.tsx";
 import { Avatar } from "../src/ui/avatar.tsx";
 import {
@@ -17,7 +19,6 @@ import {
   Erreur,
   Paragraphe,
   SousTitre,
-  Titre,
 } from "../src/ui/composants.tsx";
 import { FeuilleModeration } from "../src/ui/feuille_moderation.tsx";
 import { couleurs, espaces } from "../src/ui/theme.ts";
@@ -78,7 +79,6 @@ export default function EcranMatchs() {
 
   return (
     <ScrollView contentContainerStyle={styles.contenu}>
-      <Titre>Propositions</Titre>
       <Erreur message={erreur} />
 
       <FeuilleModeration
@@ -123,8 +123,9 @@ export default function EcranMatchs() {
           ) : null}
           {profil?.date_debut ? (
             <Text style={styles.note}>
-              Arrive le {profil.date_debut}
-              {profil.date_fin ? `, repart le ${profil.date_fin}` : " (séjour ouvert)"}
+              {profil.date_fin
+                ? `Sur place ${formaterPeriode(profil.date_debut, profil.date_fin, LANGUE_INTERFACE)}`
+                : `Arrive le ${formaterPeriode(profil.date_debut, null, LANGUE_INTERFACE)} — séjour ouvert`}
             </Text>
           ) : null}
           <Text style={styles.note}>Affinité {Math.round(score * 100)} %</Text>

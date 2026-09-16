@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import {
   aujourdhuiISO,
   etatSejour,
+  formaterDate,
+  formaterPeriode,
   joursEntre,
   libelleEtatSejour,
   sejourEligibleAuMatching,
@@ -89,4 +91,42 @@ test("éligibilité au matching : miroir de la règle serveur", () => {
   assert.equal(sejourEligibleAuMatching(voyage(), "inactif"), false);
   assert.equal(sejourEligibleAuMatching(voyage({ type: "local" }), "actif"), false);
   assert.equal(sejourEligibleAuMatching(voyage({ date_debut: null }), "actif"), false);
+});
+
+test("formaterDate rend une date lisible", () => {
+  assert.equal(formaterDate("2027-03-15", "fr", "2026-09-16"), "15 mars 2027");
+  assert.equal(formaterDate("2027-08-03", "fr", "2026-09-16"), "3 août 2027");
+  assert.equal(formaterDate("2027-03-15", "en", "2026-09-16"), "March 15, 2027");
+});
+
+test("formaterDate met « 1er » en français, « 1 » en anglais", () => {
+  assert.equal(formaterDate("2027-05-01", "fr", "2026-09-16"), "1er mai 2027");
+  assert.equal(formaterDate("2027-05-01", "en", "2026-09-16"), "May 1, 2027");
+  assert.equal(formaterDate("2027-05-21", "fr", "2026-09-16"), "21 mai 2027");
+});
+
+test("formaterDate omet l'année en cours", () => {
+  assert.equal(formaterDate("2026-09-20", "fr", "2026-09-16"), "20 septembre");
+  assert.equal(formaterDate("2026-09-20", "en", "2026-09-16"), "September 20");
+});
+
+test("formaterDate rejette une date invalide", () => {
+  assert.throws(() => formaterDate("2027-02-30", "fr"), /inexistante/);
+  assert.throws(() => formaterDate("15/03/2027", "fr"), /YYYY-MM-DD/);
+});
+
+test("formaterPeriode encadre deux dates", () => {
+  assert.equal(
+    formaterPeriode("2027-03-15", "2027-06-15", "fr", "2026-09-16"),
+    "du 15 mars 2027 au 15 juin 2027",
+  );
+  assert.equal(
+    formaterPeriode("2027-03-15", "2027-06-15", "en", "2026-09-16"),
+    "from March 15, 2027 to June 15, 2027",
+  );
+});
+
+test("formaterPeriode réduit à une date quand il n'y a pas de fin distincte", () => {
+  assert.equal(formaterPeriode("2027-03-15", null, "fr", "2026-09-16"), "15 mars 2027");
+  assert.equal(formaterPeriode("2027-03-15", "2027-03-15", "fr", "2026-09-16"), "15 mars 2027");
 });

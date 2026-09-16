@@ -16,7 +16,6 @@ import {
   Erreur,
   Paragraphe,
   SousTitre,
-  Titre,
 } from "../src/ui/composants.tsx";
 import { espaces } from "../src/ui/theme.ts";
 
@@ -72,7 +71,6 @@ export default function EcranComptesBloques() {
 
   return (
     <ScrollView contentContainerStyle={styles.contenu}>
-      <Titre>Comptes bloqués</Titre>
       <Paragraphe>
         Ces comptes ne peuvent pas vous écrire et n'apparaissent pas dans vos suggestions. Débloquer
         rétablit la conversation précédente, qui n'a jamais été supprimée.

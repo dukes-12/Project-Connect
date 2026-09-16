@@ -9,6 +9,7 @@ import {
   type Carte,
 } from "../src/donnees/requetes.ts";
 import { etatSejour, libelleEtatSejour, sejourEligibleAuMatching } from "../src/domaine/sejour.ts";
+import { LANGUE_INTERFACE } from "../src/domaine/traduction.ts";
 import { useSession } from "../src/session.tsx";
 import {
   Bloc,
@@ -22,7 +23,7 @@ import {
 import { couleurs, espaces } from "../src/ui/theme.ts";
 
 export default function EcranAccueil() {
-  const { langue, seDeconnecter } = useSession();
+  const { seDeconnecter } = useSession();
   const router = useRouter();
 
   const [cartes, setCartes] = useState<Carte[] | null>(null);
@@ -89,7 +90,7 @@ export default function EcranAccueil() {
         <>
           <Titre>{principale.ville}</Titre>
           <Paragraphe>
-            {libelleEtatSejour(etatSejour(principale), langue)}
+            {libelleEtatSejour(etatSejour(principale), LANGUE_INTERFACE)}
             {principale.type === "travailleur" ? " · mobilité professionnelle" : ""}
           </Paragraphe>
 
@@ -204,7 +205,7 @@ export default function EcranAccueil() {
               <Paragraphe>
                 {carte.statut === "archive"
                   ? "Archivée"
-                  : libelleEtatSejour(etatSejour(carte), langue)}
+                  : libelleEtatSejour(etatSejour(carte), LANGUE_INTERFACE)}
               </Paragraphe>
             </Bloc>
           ))}

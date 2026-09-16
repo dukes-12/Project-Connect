@@ -6,7 +6,8 @@ import {
   chercherDoublonsEvenement,
   soumettreEvenement,
 } from "../../src/donnees/requetes.ts";
-import { aujourdhuiISO } from "../../src/domaine/sejour.ts";
+import { aujourdhuiISO, formaterPeriode } from "../../src/domaine/sejour.ts";
+import { LANGUE_INTERFACE } from "../../src/domaine/traduction.ts";
 import {
   brouillonVide,
   LIBELLES_TYPE,
@@ -109,7 +110,6 @@ export default function EcranNouvelEvenement() {
 
   return (
     <ScrollView contentContainerStyle={styles.contenu} keyboardShouldPersistTaps="handled">
-      <Titre>Proposer un événement</Titre>
       <Paragraphe>
         À {ville}. Votre proposition passe par la modération avant d'être visible.
       </Paragraphe>
@@ -189,8 +189,7 @@ export default function EcranNouvelEvenement() {
                 <Bloc key={doublon.id}>
                   <Text style={styles.doublonTitre}>{doublon.titre}</Text>
                   <Text style={styles.note}>
-                    {doublon.date_debut}
-                    {doublon.date_fin ? ` → ${doublon.date_fin}` : ""}
+                    {formaterPeriode(doublon.date_debut, doublon.date_fin, LANGUE_INTERFACE)}
                     {doublon.statut_moderation === "en_attente" ? " · en attente de validation" : ""}
                   </Text>
                 </Bloc>
