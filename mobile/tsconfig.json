@@ -1,0 +1,15 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    // Les imports portent leur extension .ts/.tsx : c'est ce qu'exige le
+    // lanceur de tests de Node en mode « strip-types », et Metro l'accepte.
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "noUncheckedIndexedAccess": false,
+    // Les fichiers de test tournent sous Node (node --test), pas sous Metro.
+    "types": ["node"]
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules"]
+}

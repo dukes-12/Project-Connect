@@ -9,9 +9,11 @@ Spec produit & technique : [`docs/spec-produit.md`](docs/spec-produit.md).
 ## État
 
 Backend complet pour le périmètre MVP (§9), appliqué et déployé sur le projet
-Supabase `Project-Connect` (région eu-central-1). Il reste à construire
-l'application cliente, le back-office de modération, les notifications push et
-l'agrégation d'événements externes.
+Supabase `Project-Connect` (région eu-central-1).
+
+Application mobile Expo : ossature en place — session, onboarding, accueil,
+cohortes, propositions de match, messagerie temps réel. Elle compile et se
+bundle, mais **n'a jamais été exécutée** : voir « Limites de vérification ».
 
 ## Structure
 
@@ -25,6 +27,11 @@ supabase/
   functions/
     _partage/            Logique de matching, sans I/O — testée unitairement
     matching/            Edge function : dépôt Supabase + point d'entrée HTTP
+mobile/                  Application Expo (expo-router)
+  app/                   Routes : connexion, onboarding, accueil, cohorte…
+  src/domaine/           Logique pure, testée unitairement
+  src/donnees/           Client Supabase, types générés, requêtes
+  src/ui/                Thème et composants partagés
 ```
 
 ## Tests
@@ -33,9 +40,15 @@ supabase/
 npm test
 ```
 
-28 tests unitaires sur la logique de cohorte et le service de matching. Ils
-tournent sans base ni réseau : le service est écrit contre une interface
-`DepotMatching` qu'un dépôt en mémoire implémente dans les tests.
+61 tests unitaires, sans base ni réseau :
+
+- **28 côté backend** — logique de cohorte et service de matching, écrit contre
+  une interface `DepotMatching` qu'un dépôt en mémoire implémente.
+- **33 côté mobile** — découpage de la session, traduction, état d'un séjour.
+
+Pas de framework de test : Node exécute le TypeScript directement
+(`--experimental-strip-types`). `npm run typecheck:mobile` vérifie le typage de
+l'app.
 
 ## Le schéma en bref
 
@@ -130,3 +143,50 @@ Ne jamais appliquer en production. Suppression :
 ```sql
 delete from auth.users where email like '%@dev.project-connect.test';
 ```
+
+## L'application mobile
+
+```
+cd mobile
+cp .env.example .env
+npm install --legacy-peer-deps
+npx expo start
+```
+
+Parcours couvert (§11) : inscription → profil → première carte → centres
+d'intérêt → accueil, avec cohortes, propositions de match et messagerie temps
+réel.
+
+La session est stockée dans SecureStore **découpée en fragments** : un jeton
+Supabase dépasse la limite de 2048 octets par entrée. Le découpage se fait sur
+les unités UTF-16, pour qu'un emoji à cheval sur deux fragments soit recollé
+intact.
+
+Tout ce qui concerne les autres comptes passe par les vues masquées
+(`v_cartes_publiques`, `v_locaux_actifs`) et jamais par les tables : les champs
+qu'une personne a choisi de cacher reviennent à `null` jusque dans l'app.
+
+## Limites de vérification
+
+Le réseau de l'environnement de développement bloque `*.supabase.co`,
+`docs.expo.dev` et l'API d'Expo. En conséquence :
+
+- **L'app n'a jamais été lancée.** Elle passe `tsc --noEmit` et se bundle
+  (`expo export --platform web`, 841 modules), ce qui prouve que le graphe de
+  modules et les types tiennent — pas que les écrans s'affichent correctement.
+- **Les versions des paquets n'ont pas été résolues par `expo install`** mais
+  par npm. Les paquets Expo sont bien alignés sur le SDK 57, mais cela reste à
+  confirmer sur un poste connecté.
+- **L'edge function n'a pas été testée en HTTP.** Son contrat base de données a
+  été validé requête par requête.
+
+## Ce qui reste à construire
+
+- **Téléversement de la photo de profil.** Le bucket et ses règles existent, la
+  convention de chemin est respectée, mais l'app n'envoie pas encore l'image :
+  `expo-image-picker` n'a pas pu être installé sans `expo install`. Les profils
+  créés pointent vers un chemin encore vide.
+- Écrans fiche ville, checklist et découverte des locaux — les requêtes
+  existent déjà dans `src/donnees/requetes.ts`.
+- Blocage et signalement depuis l'app (les requêtes existent aussi).
+- Back-office de modération, notifications push, agrégation d'événements.

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Les tests tournent directement en TypeScript via le mode « strip-types »
+      # de Node : pas d'étape de compilation, pas de dépendance de test.
+      - name: Tests du service de matching
+        run: npm run test:backend
+
+      - name: Dépendances de l'app mobile
+        working-directory: mobile
+        # --legacy-peer-deps : quelques paquets de l'écosystème Expo déclarent
+        # des pairs incompatibles entre eux sur ce SDK.
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Tests de l'app mobile
+        working-directory: mobile
+        run: npm test
+
+      - name: Typage de l'app mobile
+        working-directory: mobile
+        run: npm run typecheck

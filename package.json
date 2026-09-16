@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --experimental-strip-types --test supabase/functions/_partage/*.test.ts"
+    "test:backend": "node --experimental-strip-types --test supabase/functions/_partage/*.test.ts",
+    "test:mobile": "npm --prefix mobile test",
+    "typecheck:mobile": "npm --prefix mobile run typecheck",
+    "test": "npm run test:backend && npm run test:mobile"
   }
 }
