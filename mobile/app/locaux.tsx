@@ -9,6 +9,7 @@ import {
 } from "../src/donnees/requetes.ts";
 import { useUtilisateurId } from "../src/session.tsx";
 import { Avatar } from "../src/ui/avatar.tsx";
+import { FeuilleModeration } from "../src/ui/feuille_moderation.tsx";
 import {
   Bloc,
   Bouton,
@@ -31,6 +32,7 @@ export default function EcranLocaux() {
   const [intro, setIntro] = useState<Record<string, string>>({});
   const [occupe, setOccupe] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [cibleModeration, setCibleModeration] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
     if (!ville || !pays) return setErreur("Ville inconnue.");
@@ -95,6 +97,14 @@ export default function EcranLocaux() {
 
       <Erreur message={erreur} />
 
+      <FeuilleModeration
+        visible={cibleModeration !== null}
+        onFermer={() => setCibleModeration(null)}
+        moi={moi}
+        cible={cibleModeration}
+        onBloque={() => void charger()}
+      />
+
       {filtres.length === 0 ? (
         <Paragraphe>
           {locaux && locaux.length > 0
@@ -118,6 +128,16 @@ export default function EcranLocaux() {
                   <Text style={styles.note}>Parle {local.langues.join(", ")}</Text>
                 ) : null}
               </View>
+              {local.user_id ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Signaler ou bloquer ce profil"
+                  onPress={() => setCibleModeration(local.user_id)}
+                  hitSlop={10}
+                >
+                  <Text style={styles.signaler}>Signaler</Text>
+                </Pressable>
+              ) : null}
             </View>
 
             {local.bio ? <Paragraphe>{local.bio}</Paragraphe> : null}
@@ -189,4 +209,5 @@ const styles = StyleSheet.create({
     color: couleurs.texte,
   },
   envoyee: { color: couleurs.accent, fontWeight: "600", marginTop: espaces.s },
+  signaler: { color: couleurs.texteAttenue, fontSize: 13 },
 });

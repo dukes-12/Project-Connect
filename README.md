@@ -13,8 +13,9 @@ Supabase `Project-Connect` (région eu-central-1).
 
 Application mobile Expo : le périmètre MVP est couvert — session, onboarding
 avec photo, accueil, cohortes, propositions de match, messagerie temps réel,
-fiche ville, checklist d'installation et découverte des locaux. Elle compile et
-se bundle, mais **n'a jamais été exécutée** : voir « Limites de vérification ».
+fiche ville, checklist d'installation, découverte des locaux, blocage et
+signalement. Elle compile et se bundle, mais **n'a jamais été exécutée** : voir
+« Limites de vérification ».
 
 ## Structure
 
@@ -118,6 +119,7 @@ l'élargissement retenu est renvoyé pour que l'app puisse l'afficher.
 | Match individuel accepté des deux côtés | Ouvre le chat 1:1 (§8.2) |
 | Demande de mise en relation acceptée | Ouvre le chat avec le local (§8.3) |
 | 3ᵉ signalement ouvert sur un profil | Passe tout son dossier en revue prioritaire (§9.7) |
+| Blocage entre deux comptes | Fait disparaître leur échange à deux de `v_mes_conversations`, dans les deux sens |
 | Tous les jours à 03:00 UTC | Archive les cartes dont le séjour est terminé (§6.2) |
 
 Les seuils vivent dans `app_private.parametres`, modifiables sans migration.
@@ -190,12 +192,26 @@ Le réseau de l'environnement de développement bloque `*.supabase.co`,
 - **L'edge function n'a pas été testée en HTTP.** Son contrat base de données a
   été validé requête par requête.
 
+## Blocage et signalement
+
+Deux actions délibérément distinctes à l'écran : le blocage est immédiat et
+réversible par celui qui l'a posé ; le signalement part en file de modération et
+n'a pas d'effet visible tout de suite. Les confondre laisserait croire qu'un
+signalement fait taire l'autre.
+
+L'accès est là où la spec §9.7 le demande — pendant l'échange (bouton d'en-tête
+sur un tête-à-tête, appui long sur un message dans une cohorte, ce qui joint le
+message au signalement) et depuis les profils, dans les propositions de match
+comme dans la liste des locaux.
+
+Côté base, `v_mes_conversations` fait disparaître un échange à deux dès qu'un
+blocage existe dans un sens ou dans l'autre. Une cohorte, elle, reste visible :
+seuls les messages du compte bloqué en sont filtrés, y compris dans l'aperçu.
+
 ## Ce qui reste à construire
 
-- **Blocage et signalement depuis l'app.** Les requêtes existent déjà dans
-  `src/donnees/requetes.ts` ; il manque les points d'entrée dans la conversation
-  et sur les profils, que la spec §9.7 veut visibles pendant l'échange.
 - **Soumission communautaire d'un événement** (§7.1) — la recherche de doublons
   et les règles d'écriture sont prêtes côté base.
+- **Écran de gestion des comptes bloqués** (`debloquer()` existe déjà).
 - **Modification du profil et des cartes** après l'onboarding.
 - Back-office de modération, notifications push, agrégation d'événements.

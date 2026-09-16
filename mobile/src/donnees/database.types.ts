@@ -661,6 +661,20 @@ export type Database = {
         }
         Relationships: []
       }
+      v_mes_conversations: {
+        Row: {
+          autre_user_id: string | null
+          created_at: string | null
+          dernier_message: string | null
+          dernier_message_at: string | null
+          description_groupe: string | null
+          id: string | null
+          matching_group_id: string | null
+          nb_participants: number | null
+          type: Database["public"]["Enums"]["type_conversation"] | null
+        }
+        Relationships: []
+      }
       v_profils_publics: {
         Row: {
           age: number | null

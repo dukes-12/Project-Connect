@@ -14,6 +14,7 @@ export type Profil = Tables<"users">;
 export type CartePublique = Tables<"v_cartes_publiques">;
 export type LocalActif = Tables<"v_locaux_actifs">;
 export type Message = Tables<"messages">;
+export type Conversation = Tables<"v_mes_conversations">;
 export type FicheVille = Tables<"city_guides">;
 export type ItemChecklist = Tables<"checklist_items">;
 export type TypeCarte = Enums<"type_carte">;
@@ -321,14 +322,29 @@ export async function marquerItemChecklist(
 
 // ----------------------------------------------------------------- messagerie
 
-export async function listerMesConversations() {
+/**
+ * Passe par `v_mes_conversations` et non par la table : la vue masque les
+ * échanges à deux dès qu'un blocage existe (§9.7) et fournit l'aperçu du
+ * dernier message, déjà filtré des comptes bloqués.
+ */
+export async function listerMesConversations(): Promise<Conversation[]> {
   return verifier(
     await supabase
-      .from("conversations")
-      .select("id, type, matching_group_id, created_at")
-      .order("created_at", { ascending: false }),
+      .from("v_mes_conversations")
+      .select("*")
+      .order("dernier_message_at", { ascending: false, nullsFirst: false }),
     "Conversations",
   );
+}
+
+export async function lireConversation(conversationId: string): Promise<Conversation | null> {
+  const { data, error } = await supabase
+    .from("v_mes_conversations")
+    .select("*")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (error) throw new Error(`Conversation : ${error.message}`);
+  return data;
 }
 
 export async function listerMessages(conversationId: string): Promise<Message[]> {
@@ -388,6 +404,23 @@ export async function bloquer(bloqueurId: string, bloqueId: string): Promise<voi
     .from("blocks")
     .insert({ blocker_user_id: bloqueurId, blocked_user_id: bloqueId });
   if (error) throw new Error(`Blocage : ${error.message}`);
+}
+
+/** Le blocage est réversible à tout moment, par celui qui l'a posé (§9.7). */
+export async function debloquer(bloqueurId: string, bloqueId: string): Promise<void> {
+  const { error } = await supabase
+    .from("blocks")
+    .delete()
+    .eq("blocker_user_id", bloqueurId)
+    .eq("blocked_user_id", bloqueId);
+  if (error) throw new Error(`Déblocage : ${error.message}`);
+}
+
+export async function listerMesBlocages(): Promise<Array<{ blocked_user_id: string }>> {
+  return verifier(
+    await supabase.from("blocks").select("blocked_user_id"),
+    "Comptes bloqués",
+  );
 }
 
 export async function signaler(

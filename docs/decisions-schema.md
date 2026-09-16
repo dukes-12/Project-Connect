@@ -231,3 +231,20 @@ GIN trigramme.
 - **Test HTTP de bout en bout** de l'edge function (réseau bloqué ici).
 - **Protection contre les mots de passe compromis**, à activer dans les réglages
   Auth du projet.
+
+## 23. Blocage : masquer la conversation, pas seulement les messages
+
+La policy sur `messages` filtrait les messages d'un compte bloqué, mais la
+conversation restait dans la liste — une coquille vide, là où la spec §9.7 dit
+« la conversation existante est masquée pour B ». `v_mes_conversations` applique
+la règle au bon niveau.
+
+Le masquage ne vaut que pour les échanges à deux : bloquer un membre d'une
+cohorte ne fait pas disparaître le groupe, seulement ses messages. Et il vaut
+dans les deux sens — le bloqué ne voit pas davantage la conversation que le
+bloqueur, sans quoi il verrait ses propres messages rester sans réponse.
+
+Un premier jet calculait `autre_user_id` pour toutes les conversations. Sur une
+cohorte, cela désignait un membre au hasard, et un groupe pouvait passer pour un
+tête-à-tête côté app — au point de faire croire à une fuite lors du test. Le
+champ n'est renseigné que pour les conversations directes.

@@ -1,9 +1,10 @@
-import { useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -13,17 +14,25 @@ import {
 import {
   ecouterMessages,
   envoyerMessage,
+  lireConversation,
   listerMessages,
+  type Conversation,
   type Message,
 } from "../../src/donnees/requetes.ts";
 import { useUtilisateurId } from "../../src/session.tsx";
 import { Bouton, Chargement, Erreur } from "../../src/ui/composants.tsx";
+import { FeuilleModeration } from "../../src/ui/feuille_moderation.tsx";
 import { couleurs, espaces, rayon } from "../../src/ui/theme.ts";
 
 export default function EcranConversation() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const moi = useUtilisateurId();
+  const router = useRouter();
 
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [cibleModeration, setCibleModeration] = useState<
+    { userId: string; messageId?: string } | null
+  >(null);
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [brouillon, setBrouillon] = useState("");
   const [envoi, setEnvoi] = useState(false);
@@ -33,6 +42,10 @@ export default function EcranConversation() {
   useEffect(() => {
     if (!id) return;
     let vivant = true;
+
+    void lireConversation(id)
+      .then((c) => vivant && setConversation(c))
+      .catch(() => undefined);
 
     listerMessages(id)
       .then((m) => vivant && setMessages(m))
@@ -78,12 +91,43 @@ export default function EcranConversation() {
 
   if (!messages && !erreur) return <Chargement libelle="Ouverture de la conversation…" />;
 
+  const estGroupe = conversation?.type === "groupe";
+  const titre = estGroupe ? (conversation?.description_groupe ?? "Cohorte") : "Conversation";
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={90}
       style={styles.plein}
     >
+      {/* §9.7 : l'accès au signalement doit rester visible pendant l'échange.
+          Dans une cohorte il n'y a pas d'interlocuteur unique : on signale
+          alors l'auteur d'un message précis, par appui long dessus. */}
+      <Stack.Screen
+        options={{
+          title: titre,
+          headerRight: () =>
+            estGroupe || !conversation?.autre_user_id ? null : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Signaler ou bloquer"
+                onPress={() => setCibleModeration({ userId: conversation.autre_user_id! })}
+                hitSlop={12}
+              >
+                <Text style={styles.actionEntete}>Signaler</Text>
+              </Pressable>
+            ),
+        }}
+      />
+
+      <FeuilleModeration
+        visible={cibleModeration !== null}
+        onFermer={() => setCibleModeration(null)}
+        moi={moi}
+        cible={cibleModeration?.userId ?? null}
+        contexte={{ conversationId: id, messageId: cibleModeration?.messageId }}
+        onBloque={() => router.replace("/conversations")}
+      />
       <FlatList
         ref={liste}
         data={messages ?? []}
@@ -93,12 +137,20 @@ export default function EcranConversation() {
         renderItem={({ item }) => {
           const deMoi = item.sender_id === moi;
           return (
-            <View style={[styles.bulle, deMoi ? styles.bulleMoi : styles.bulleAutre]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint={deMoi ? undefined : "Appui long pour signaler ce message"}
+              onLongPress={
+                deMoi ? undefined : () => setCibleModeration({ userId: item.sender_id, messageId: item.id })
+              }
+              delayLongPress={400}
+              style={[styles.bulle, deMoi ? styles.bulleMoi : styles.bulleAutre]}
+            >
               <Text style={[styles.texte, deMoi && styles.texteMoi]}>{item.contenu}</Text>
               <Text style={[styles.heure, deMoi && styles.heureMoi]}>
                 {item.created_at.slice(11, 16)}
               </Text>
-            </View>
+            </Pressable>
           );
         }}
       />
@@ -163,4 +215,5 @@ const styles = StyleSheet.create({
     color: couleurs.texte,
   },
   envoi: { width: 110 },
+  actionEntete: { color: couleurs.alerte, fontSize: 15, fontWeight: "600" },
 });
