@@ -248,3 +248,27 @@ Un premier jet calculait `autre_user_id` pour toutes les conversations. Sur une
 cohorte, cela désignait un membre au hasard, et un groupe pouvait passer pour un
 tête-à-tête côté app — au point de faire croire à une fuite lors du test. Le
 champ n'est renseigné que pour les conversations directes.
+
+## 24. Soumission d'événement : la vérification de doublon n'est pas contournable
+
+La spec §7.1 dit qu'elle est « proposée ». Retenu plus strict : elle est imposée
+comme étape, mais son résultat ne bloque pas. L'utilisateur voit les entrées
+similaires puis décide — renoncer, ou confirmer que ce n'en est pas un. Un
+bouton d'envoi direct aurait vidé la mesure de son sens, sans pour autant qu'on
+puisse décider à sa place qu'il s'agit d'un doublon.
+
+Modifier un champ après la vérification l'invalide : soumettre sur la foi d'un
+contrôle fait sur une version antérieure du formulaire n'aurait aucune valeur.
+
+Le statut de modération n'est pas transmis par le client. La policy l'impose à
+« en_attente » et refuse toute autre valeur : le passer depuis l'app laisserait
+croire qu'il est négociable.
+
+## 25. Un compte bloqué n'est plus lisible, y compris par celui qui l'a bloqué
+
+`v_profils_publics` exclut les blocages dans les deux sens. L'écran des comptes
+bloqués n'obtient donc pas le profil des personnes qu'il liste, et affiche une
+pastille à initiale. C'est cohérent — le blocage coupe la visibilité — mais cela
+signifie qu'on débloque quelqu'un sans le revoir. À revoir si la liste s'avère
+inutilisable à l'usage : il faudrait alors une vue dédiée exposant le strict
+minimum pour identifier qui l'on débloque.

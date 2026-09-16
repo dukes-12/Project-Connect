@@ -13,6 +13,7 @@ export type Hobby = Tables<"hobbies">;
 export type Profil = Tables<"users">;
 export type CartePublique = Tables<"v_cartes_publiques">;
 export type LocalActif = Tables<"v_locaux_actifs">;
+export type ProfilPublic = Tables<"v_profils_publics">;
 export type Message = Tables<"messages">;
 export type Conversation = Tables<"v_mes_conversations">;
 export type FicheVille = Tables<"city_guides">;
@@ -198,6 +199,16 @@ export async function repondreAuMatch(
   if (error) throw new Error(`Réponse au match : ${error.message}`);
 }
 
+export async function lireProfilPublic(userId: string): Promise<ProfilPublic | null> {
+  const { data, error } = await supabase
+    .from("v_profils_publics")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw new Error(`Profil : ${error.message}`);
+  return data;
+}
+
 /** Profil public d'une carte — passe par la vue masquée, jamais par la table. */
 export async function lireCartePublique(carteId: string): Promise<CartePublique | null> {
   const { data, error } = await supabase
@@ -262,6 +273,49 @@ export async function listerEvenements(ville: string, pays: string, debut: strin
       .or(`date_fin.gte.${debut},date_fin.is.null`)
       .order("date_debut"),
     "Événements de la ville",
+  );
+}
+
+/**
+ * Soumission communautaire (§7.1). Le statut de modération n'est pas passé :
+ * la policy l'impose à « en_attente » et refuse toute autre valeur, donc
+ * inutile — et trompeur — de laisser croire ici qu'il est négociable.
+ */
+export async function soumettreEvenement(
+  cityGuideId: string,
+  auteurId: string,
+  evenement: {
+    titre: string;
+    type: string;
+    dateDebut: string;
+    dateFin: string | null;
+    lien: string | null;
+    description: string | null;
+  },
+): Promise<void> {
+  const { error } = await supabase.from("ephemeral_events").insert({
+    city_guide_id: cityGuideId,
+    titre: evenement.titre,
+    type: evenement.type,
+    date_debut: evenement.dateDebut,
+    date_fin: evenement.dateFin,
+    lien: evenement.lien,
+    description: evenement.description,
+    source: "utilisateur",
+    soumis_par_user_id: auteurId,
+  });
+  if (error) throw new Error(`Soumission de l'événement : ${error.message}`);
+}
+
+/** Mes soumissions, pour suivre leur passage en modération. */
+export async function listerMesSoumissions(auteurId: string) {
+  return verifier(
+    await supabase
+      .from("ephemeral_events")
+      .select("id, titre, date_debut, statut_moderation, created_at")
+      .eq("soumis_par_user_id", auteurId)
+      .order("created_at", { ascending: false }),
+    "Mes soumissions",
   );
 }
 

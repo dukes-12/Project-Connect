@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -132,6 +132,24 @@ export default function EcranVille() {
         </>
       )}
 
+      {fiche ? (
+        <Bloc>
+          <SousTitre>Un événement manque ?</SousTitre>
+          <Paragraphe>
+            Proposez-le : il rejoindra la fiche une fois validé par la modération.
+          </Paragraphe>
+          <Link
+            href={{
+              pathname: "/evenement/nouveau",
+              params: { cityGuideId: fiche.id, ville, pays },
+            }}
+            asChild
+          >
+            <Text style={styles.lien}>Proposer un événement →</Text>
+          </Link>
+        </Bloc>
+      ) : null}
+
       {evenements.length > 0 ? (
         <>
           <SousTitre>Pendant votre séjour</SousTitre>
@@ -165,4 +183,5 @@ const styles = StyleSheet.create({
   },
   urgenceLibelle: { fontSize: 15, color: couleurs.texte },
   urgenceNumero: { fontSize: 16, fontWeight: "700", color: couleurs.accent },
+  lien: { color: couleurs.accent, fontWeight: "600", marginTop: espaces.s, fontSize: 15 },
 });

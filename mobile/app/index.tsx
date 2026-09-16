@@ -211,6 +211,13 @@ export default function EcranAccueil() {
         </View>
       ) : null}
 
+      <Bloc>
+        <SousTitre>Confidentialité</SousTitre>
+        <Link href="/comptes-bloques" asChild>
+          <Text style={styles.lien}>Comptes bloqués →</Text>
+        </Link>
+      </Bloc>
+
       <Bouton variante="contour" titre="Se déconnecter" onPress={() => void seDeconnecter()} />
     </ScrollView>
   );

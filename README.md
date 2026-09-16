@@ -13,9 +13,9 @@ Supabase `Project-Connect` (région eu-central-1).
 
 Application mobile Expo : le périmètre MVP est couvert — session, onboarding
 avec photo, accueil, cohortes, propositions de match, messagerie temps réel,
-fiche ville, checklist d'installation, découverte des locaux, blocage et
-signalement. Elle compile et se bundle, mais **n'a jamais été exécutée** : voir
-« Limites de vérification ».
+fiche ville, checklist d'installation, découverte des locaux, soumission
+d'événement, blocage et signalement. Elle compile et se bundle, mais **n'a
+jamais été exécutée** : voir « Limites de vérification ».
 
 ## Structure
 
@@ -42,12 +42,12 @@ mobile/                  Application Expo (expo-router)
 npm test
 ```
 
-72 tests unitaires, sans base ni réseau :
+85 tests unitaires, sans base ni réseau :
 
 - **28 côté backend** — logique de cohorte et service de matching, écrit contre
   une interface `DepotMatching` qu'un dépôt en mémoire implémente.
-- **44 côté mobile** — découpage de la session, traduction, état d'un séjour,
-  décodage base64.
+- **57 côté mobile** — découpage de la session, traduction, état d'un séjour,
+  décodage base64, validation d'une soumission d'événement.
 
 Pas de framework de test : Node exécute le TypeScript directement
 (`--experimental-strip-types`). `npm run typecheck:mobile` vérifie le typage de
@@ -208,10 +208,17 @@ Côté base, `v_mes_conversations` fait disparaître un échange à deux dès qu
 blocage existe dans un sens ou dans l'autre. Une cohorte, elle, reste visible :
 seuls les messages du compte bloqué en sont filtrés, y compris dans l'aperçu.
 
-## Ce qui reste à construire
+## Soumission d'un événement
 
-- **Soumission communautaire d'un événement** (§7.1) — la recherche de doublons
-  et les règles d'écriture sont prêtes côté base.
-- **Écran de gestion des comptes bloqués** (`debloquer()` existe déjà).
+Le formulaire ne part jamais directement : la vérification de doublon est
+imposée avant l'envoi, comme le demande le §7.1. Les entrées similaires — même
+ville, dates proches, titre voisin au sens trigramme — sont affichées, y compris
+celles encore en modération, puisque c'est précisément le doublon qu'on veut
+éviter. L'utilisateur peut alors renoncer, ou confirmer que ce n'en est pas un.
+
+Modifier un champ après vérification invalide celle-ci : on ne soumet pas un
+formulaire sur la foi d'un contrôle fait sur une version antérieure.
+
+## Ce qui reste à construire
 - **Modification du profil et des cartes** après l'onboarding.
 - Back-office de modération, notifications push, agrégation d'événements.
