@@ -162,3 +162,72 @@ score devient visible des utilisateurs.
   poste ayant accès au projet.
 - Planification de `archiver_cartes_expirees()`.
 - Notifications push à la création d'un match ou d'un message.
+
+---
+
+# Décisions prises en comblant les trous du MVP
+
+## 18. Chat 1:1 : trigger sur l'acceptation
+
+Rien n'ouvrait la conversation quand un match ou une demande de mise en relation
+était accepté — le parcours §9.6 s'arrêtait là. Réglé par deux triggers,
+symétriques de celui des cohortes.
+
+Le déclencheur est `statut = 'accepte'`, une colonne générée. Conséquence utile :
+si la décision §8.2 bascule vers « un seul oui suffit », seule la formule de la
+colonne change et les triggers continuent de fonctionner sans retouche.
+
+`conversations` porte maintenant `individual_match_id` et `connection_id`, avec
+une contrainte garantissant exactement une origine par conversation.
+
+## 19. Photos : bucket privé, pas public
+
+Un bucket public rendrait toute photo accessible à qui connaît son chemin, ce qui
+contournerait le blocage (§9.7). Bucket privé, accès par URL signée, et les
+policies de `storage.objects` refilrent les comptes bloqués. Convention de chemin
+`<user_id>/<fichier>`, le premier segment faisant foi pour la propriété.
+
+## 20. i18n : `traductions jsonb` par table, pas de table de traductions
+
+Les colonnes existantes restent la langue de référence (français) ; chaque table
+de contenu éditorial porte `{"en": {...}}`. Une table de traductions séparée
+serait plus normalisée mais imposerait une jointure à chaque lecture, pour un
+volume qui reste éditorial. `public.traduire()` applique le repli.
+
+Ne concerne que le contenu éditorial : ce que les utilisateurs écrivent (bio,
+messages, événements soumis) n'est pas traduit.
+
+## 21. Seuils de modération en table, pas en constantes
+
+`app_private.parametres` porte le seuil de signalements convergents (3), la
+tolérance de dates pour les doublons (3 jours) et le seuil de similarité de titre
+(0,4). La spec §9.7 demande un seuil « configurable » — en table, il se change
+sans migration.
+
+Quand le seuil est atteint, **tous** les signalements ouverts du profil passent
+en priorité haute, pas seulement le dernier : un modérateur qui trie par priorité
+doit voir le dossier complet remonter d'un bloc.
+
+## 22. `evenements_similaires()` voit les soumissions en attente
+
+En `SECURITY DEFINER` volontairement : détecter un doublon suppose de voir les
+soumissions encore en modération, y compris celles d'autres utilisateurs. La
+fonction ne renvoie que titre, dates et statut — jamais l'auteur.
+
+L'index posé initialement sous le nom `events_titre_trgm` était en réalité un
+btree, inutilisable pour une recherche par similarité. Remplacé par un vrai index
+GIN trigramme.
+
+## Ce qui reste à construire
+
+- **Application cliente** (React Native / Expo) — tout le §11.
+- **Providers d'authentification** : aucun n'est configuré (§9.1).
+- **Back-office de modération** : traiter la file des signalements et des
+  événements en attente.
+- **Notifications push** (FCM, §12).
+- **Agrégation d'événements** Meetup/Eventbrite (§12) — la spec la dit mockable
+  au début.
+- **Intégration continue** : les tests ne tournent pas automatiquement.
+- **Test HTTP de bout en bout** de l'edge function (réseau bloqué ici).
+- **Protection contre les mots de passe compromis**, à activer dans les réglages
+  Auth du projet.

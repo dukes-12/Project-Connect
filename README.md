@@ -8,9 +8,10 @@ Spec produit & technique : [`docs/spec-produit.md`](docs/spec-produit.md).
 
 ## État
 
-Schéma de données et service de matching en place, appliqués et déployés sur le
-projet Supabase `Project-Connect` (région eu-central-1). Pas encore
-d'application cliente.
+Backend complet pour le périmètre MVP (§9), appliqué et déployé sur le projet
+Supabase `Project-Connect` (région eu-central-1). Il reste à construire
+l'application cliente, le back-office de modération, les notifications push et
+l'agrégation d'événements externes.
 
 ## Structure
 
@@ -63,6 +64,9 @@ Deux mécanismes structurants :
 | `groupes_compatibles(carte_id, tolerance_jours)` | Cohortes existantes compatibles avec une carte |
 | `candidats_individuels(carte_id, limite, tolerance_jours)` | Profils individuels classés par score |
 | `repondre_match(match_id, reponse)` | Accepter/refuser un match (écrit uniquement sa propre décision) |
+| `evenements_similaires(ville, pays, titre, date)` | Doublons avant soumission d'un événement (§7.1) |
+| `traduire(defaut, traductions, langue, champ)` | Contenu dans la langue demandée, repli sur le français |
+| `archiver_cartes_expirees()` | Archive les séjours terminés — planifiée tous les jours à 03:00 UTC |
 
 `tolerance_jours` élargit la fenêtre de dates quand une ville est peu peuplée
 (spec §14). Les deux premières vérifient que l'appelant possède bien la carte.
@@ -90,6 +94,30 @@ testables sans rien démarrer.
 Une cohorte couvre ±2 semaines autour de l'arrivée. Si la recherche ne donne
 rien, elle est réessayée à ±7, ±21 puis ±60 jours avant d'abandonner (§14) ;
 l'élargissement retenu est renvoyé pour que l'app puisse l'afficher.
+
+## Ce que la base fait toute seule
+
+| Déclencheur | Effet |
+|---|---|
+| Rejoindre une cohorte | Ouvre le chat de groupe et y ajoute le membre ; le quitter l'en retire |
+| Match individuel accepté des deux côtés | Ouvre le chat 1:1 (§8.2) |
+| Demande de mise en relation acceptée | Ouvre le chat avec le local (§8.3) |
+| 3ᵉ signalement ouvert sur un profil | Passe tout son dossier en revue prioritaire (§9.7) |
+| Tous les jours à 03:00 UTC | Archive les cartes dont le séjour est terminé (§6.2) |
+
+Les seuils vivent dans `app_private.parametres`, modifiables sans migration.
+
+## Photos et multilingue
+
+Les photos de profil vont dans le bucket privé `photos-profil`, au chemin
+`<user_id>/<fichier>`. Bucket privé et non public : l'accès passe par une URL
+signée, donc un compte bloqué ne peut pas récupérer la photo de celui qui l'a
+bloqué.
+
+Les contenus éditoriaux (hobbies, fiches ville, points d'intérêt, checklist,
+événements) portent une colonne `traductions jsonb` de forme
+`{"en": {"nom": "..."}}`. Les colonnes d'origine restent la version française et
+servent de repli. Anglais déjà saisi pour tout le contenu de référence.
 
 ## Jeu de test
 
