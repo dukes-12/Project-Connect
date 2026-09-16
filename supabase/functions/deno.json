@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "jsr:@supabase/supabase-js@2"
+  },
+  "fmt": { "lineWidth": 92 },
+  "lint": { "rules": { "tags": ["recommended"] } }
+}

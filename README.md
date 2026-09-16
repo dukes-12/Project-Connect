@@ -8,8 +8,9 @@ Spec produit & technique : [`docs/spec-produit.md`](docs/spec-produit.md).
 
 ## État
 
-Le schéma de données PostgreSQL est en place et appliqué sur le projet Supabase
-`Project-Connect` (région eu-central-1). Pas encore d'application cliente.
+Schéma de données et service de matching en place, appliqués et déployés sur le
+projet Supabase `Project-Connect` (région eu-central-1). Pas encore
+d'application cliente.
 
 ## Structure
 
@@ -20,7 +21,20 @@ docs/
 supabase/
   migrations/            Migrations SQL, appliquées dans l'ordre des noms
   seeds/dev_matching.sql Jeu de test pour le matching — DEV UNIQUEMENT
+  functions/
+    _partage/            Logique de matching, sans I/O — testée unitairement
+    matching/            Edge function : dépôt Supabase + point d'entrée HTTP
 ```
+
+## Tests
+
+```
+npm test
+```
+
+28 tests unitaires sur la logique de cohorte et le service de matching. Ils
+tournent sans base ni réseau : le service est écrit contre une interface
+`DepotMatching` qu'un dépôt en mémoire implémente dans les tests.
 
 ## Le schéma en bref
 
@@ -55,6 +69,27 @@ Deux mécanismes structurants :
 
 Les helpers d'autorisation (`est_bloque`, `est_participant`, `est_membre_groupe`,
 `possede_carte`) vivent dans le schéma `app_private`, non exposé par PostgREST.
+
+## Service de matching
+
+Edge function `matching`, déclenchée à l'activation d'une carte. `POST` avec un
+corps JSON :
+
+| Action | Corps | Effet |
+|---|---|---|
+| `activer` | `{action, carte_id}` | Cherche une cohorte ; en crée une si aucune n'existe (§8.1.2), sinon renvoie les propositions (§8.1.3). Enregistre en parallèle les propositions individuelles (§8.2). |
+| `rejoindre` | `{action, carte_id, groupe_id}` | Rejoint une cohorte proposée, après revalidation de la compatibilité. |
+| `creer_cohorte` | `{action, carte_id}` | Crée sa propre cohorte malgré les propositions existantes. |
+
+Découpage : `_partage/cohorte.ts` (fonctions pures : fenêtre, libellé, éligibilité,
+élargissement) → `_partage/service_matching.ts` (orchestration, contre une
+interface) → `matching/depot_supabase.ts` (requêtes) → `matching/index.ts` (HTTP).
+Seules les deux premières couches portent des règles métier, et elles sont
+testables sans rien démarrer.
+
+Une cohorte couvre ±2 semaines autour de l'arrivée. Si la recherche ne donne
+rien, elle est réessayée à ±7, ±21 puis ±60 jours avant d'abandonner (§14) ;
+l'élargissement retenu est renvoyé pour que l'app puisse l'afficher.
 
 ## Jeu de test
 

@@ -97,3 +97,68 @@ Ne remplace pas l'avis juridique que la spec §14 appelle.
 - Agrégation d'événements via API Meetup/Eventbrite.
 - Protection contre les mots de passe compromis : à activer dans les réglages Auth
   du projet Supabase (advisor `auth_leaked_password_protection`).
+
+---
+
+# Décisions prises sur le service de matching
+
+## 11. Largeur d'une cohorte : ±2 semaines
+
+La spec §5.1 donne « ex. ±2 semaines » comme illustration. Retenu tel quel :
+`DEMI_FENETRE_JOURS = 14` dans `_partage/cohorte.ts`, constante unique à ajuster.
+
+## 12. Élargissement par paliers : 0, 7, 21, 60 jours
+
+La spec §14 demande d'« élargir automatiquement la fenêtre si peu d'utilisateurs
+actifs » sans chiffrer. Retenu : quatre paliers, essayés dans l'ordre, arrêt au
+premier concluant. L'élargissement effectivement utilisé est renvoyé à l'app,
+pour qu'elle puisse dire « élargi à ±21 jours » plutôt que d'afficher des
+résultats inexplicablement lointains.
+
+Le seuil de déclenchement diffère selon l'objet : un seul groupe suffit, alors
+qu'on élargit tant qu'il y a moins de 3 candidats individuels
+(`CANDIDATS_SOUHAITES`).
+
+## 13. Description de cohorte : découpage du mois en trois
+
+`descriptionCohorte()` produit « Arrivées à Lisbonne — mi-mars 2027 », l'exemple
+exact de la spec §8.1.2. Le mois est découpé en « début » (1–10), « mi- »
+(11–20), « fin » (21–31).
+
+## 14. Le chat de groupe est géré par trigger, pas par le service
+
+`membres_sync_conversation` crée la conversation du groupe et y ajoute/retire les
+participants. En base plutôt qu'en code applicatif : tout chemin d'insertion
+(edge function, back-office, migration) donne le même résultat, et il ne peut pas
+exister deux conversations pour un même groupe.
+
+## 15. Archivage : fonction appelée, pas trigger
+
+`archiver_cartes_expirees()` est à appeler quotidiennement (pg_cron ou edge
+function planifiée) — **pas encore planifié**. Un trigger ne conviendrait pas :
+l'archivage dépend du temps qui passe, pas d'une écriture.
+
+## 16. Le service de matching tourne en `service_role`
+
+`individual_matches` n'a pas de policy INSERT : les propositions sont créées par
+le système, pas par les utilisateurs. L'edge function identifie l'appelant via son
+JWT, puis construit le dépôt avec cet identifiant : `lireCarte()` ne voit que les
+cartes de l'appelant, donc toute activation sur la carte d'autrui échoue en
+« carte introuvable ».
+
+## 17. Le score stocké est asymétrique
+
+`candidats_individuels` calcule la part de séjour partagée relativement au séjour
+de référence. Une paire n'étant enregistrée qu'une fois, le score conservé est
+celui de la carte qui a déclenché le matching. Acceptable en MVP ; à revoir si le
+score devient visible des utilisateurs.
+
+## Non couvert à ce stade
+
+- Aucun test HTTP de bout en bout de l'edge function : le réseau de
+  l'environnement de développement bloque `*.supabase.co`. La logique est
+  couverte par 28 tests unitaires et le contrat base de données a été validé
+  requête par requête, mais le trajet HTTP complet reste à vérifier depuis un
+  poste ayant accès au projet.
+- Planification de `archiver_cartes_expirees()`.
+- Notifications push à la création d'un match ou d'un message.

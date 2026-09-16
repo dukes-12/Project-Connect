@@ -1,0 +1,8 @@
+{
+  "name": "project-connect",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test supabase/functions/_partage/*.test.ts"
+  }
+}
